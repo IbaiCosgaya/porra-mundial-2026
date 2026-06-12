@@ -12,10 +12,12 @@ jobs:
 
     steps:
     - name: Clonar el repositorio
-      uses: actions/checkout@v4  # 👈 Actualizado de v3 a v4 para soportar Node 24
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.PORRA_TOKEN }} # 👈 Usamos tu token para que Vercel sepa que eres tú
 
     - name: Configurar Python
-      uses: actions/setup-python@v5  # 👈 Actualizado de v4 a v5 para soportar Node 24
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
@@ -31,7 +33,7 @@ jobs:
 
     - name: Guardar cambios del JSON en el repositorio
       run: |
-        git config --global user.name 'PorraBot'
+        git config --global user.name 'IbaiCosgaya' # 👈 Cambiado a tu nombre para que Vercel lo acepte
         git config --global user.email 'porrabot@github.com'
         git add clasificacion.json
         git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Clasificación actualizada automáticamente" && git push)
