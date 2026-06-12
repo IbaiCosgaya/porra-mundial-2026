@@ -9,12 +9,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # 🌟 AQUÍ ESTÁ LA MAGIA: Obligamos a GitHub a usar Node 24 y eliminar el warning
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
     steps:
     - name: Clonar el repositorio
       uses: actions/checkout@v4
       with:
-        token: ${{ secrets.PORRA_TOKEN }} # 👈 Usamos tu token para que Vercel sepa que eres tú
+        token: ${{ secrets.PORRA_TOKEN }}
 
     - name: Configurar Python
       uses: actions/setup-python@v5
@@ -33,7 +37,7 @@ jobs:
 
     - name: Guardar cambios del JSON en el repositorio
       run: |
-        git config --global user.name 'IbaiCosgaya' # 👈 Cambiado a tu nombre para que Vercel lo acepte
+        git config --global user.name 'IbaiCosgaya'
         git config --global user.email 'porrabot@github.com'
         git add clasificacion.json
         git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Clasificación actualizada automáticamente" && git push)
