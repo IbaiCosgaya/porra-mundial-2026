@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Porra Mundial 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+    <div class="max-w-4xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+        
+        <header class="text-center mb-12">
+            <span class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-4 animate-pulse">
+                🔴 Puntuaciones en vivo
+            </span>
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-orange-500 to-indigo-500 bg-clip-text text-transparent">
+                🏆 PORRA MUNDIAL 2026
+            </h1>
+            <p class="text-slate-400 mt-3 text-sm sm:text-base max-w-md mx-auto">
+                Clasificación general con el reparto de premios según vuestra tabla oficial.
+            </p>
+        </header>
+
+        <div class="bg-slate-800/60 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50">
+            <div class="p-6 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/30">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-100 tracking-wide">Clasificación y Premios</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Fase de Grupos en curso</p>
+                </div>
+                <span class="bg-indigo-500/10 text-indigo-400 text-xs px-3 py-1 rounded-full font-semibold border border-indigo-500/20">
+                    11 Jugadores
+                </span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-900/40 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700/50">
+                            <th class="py-4 px-6 text-center w-20">Pos</th>
+                            <th class="py-4 px-6">Participante</th>
+                            <th class="py-4 px-6 text-center">Premio</th>
+                            <th class="py-4 px-6 text-right font-bold text-amber-400 pr-8">Total Puntos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-clasificacion" class="divide-y divide-slate-700/30 text-sm sm:text-base">
+                        <tr id="loading-state">
+                            <td colspan="4" class="py-10 text-center text-slate-400">
+                                <div class="flex justify-center items-center gap-2">
+                                    <div class="w-4 h-4 rounded-full bg-indigo-500 animate-bounce"></div>
+                                    <span>Cargando clasificación...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="mt-4 flex flex-wrap justify-center gap-4 text-xs text-slate-400">
+            <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500/30"></div> Zona de Premios (1º al 9º)</div>
+            <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded bg-red-500/20 border border-red-500/30"></div> Zona Roja (Sin Premio)</div>
+        </div>
+
+        <footer class="mt-12 text-center text-xs text-slate-500">
+            Porra Mundial v1.0 • Diseñado con los premios de la porra
+        </footer>
+    </div>
+
+    <script>
+        // Tabla de premios oficial de vuestra captura
+        const PREMIOS = {
+            1: "70€", 2: "50€", 3: "40€", 4: "25€", 5: "20€",
+            6: "15€", 7: "10€", 8: "5€",  9: "5€",  10: "0€", 11: "0€"
+        };
+
+        async function cargarClasificacion() {
+            try {
+                const respuesta = await fetch('clasificacion.json');
+                const datos = await respuesta.json();
+                
+                const tabla = document.getElementById('tabla-clasificacion');
+                tabla.innerHTML = '';
+
+                datos.forEach((user, index) => {
+                    const posicion = index + 1;
+                    const tr = document.createElement('tr');
+                    
+                    // 🎨 ASIGNACIÓN DE COLORES DE LA IMAGEN MEDIANTE TAILWIND
+                    let colorFondo = "hover:bg-slate-700/20 text-slate-200";
+                    let badgeEstilo = "text-slate-400 font-bold";
+                    let premioBadgeStyle = "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                    let posText = posicion;
+
+                    if (posicion === 1) {
+                        colorFondo = "bg-amber-500/10 hover:bg-amber-500/15 text-amber-300 font-semibold";
+                        badgeEstilo = "text-2xl";
+                        posText = "🥇";
+                        premioBadgeStyle = "bg-amber-500/20 text-amber-300 border border-amber-500/40 font-black";
+                    } else if (posicion === 2) {
+                        colorFondo = "bg-slate-300/5 hover:bg-slate-300/10 text-slate-300 font-semibold";
+                        badgeEstilo = "text-2xl";
+                        posText = "🥈";
+                    } else if (posicion === 3) {
+                        colorFondo = "bg-orange-500/5 hover:bg-orange-500/10 text-orange-300 font-semibold";
+                        badgeEstilo = "text-2xl";
+                        posText = "🥉";
+                    } else if (posicion >= 4 && posicion <= 9) {
+                        // Zona Verde (Premios menores)
+                        colorFondo = "bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-200/90";
+                    } else if (posicion >= 10) {
+                        // Zona Roja (0€)
+                        colorFondo = "bg-red-500/5 hover:bg-red-500/10 text-red-300/90";
+                        premioBadgeStyle = "bg-red-500/10 text-red-400 border border-red-500/20 opacity-60";
+                    }
+
+                    const dinero = PREMIOS[posicion] || "0€";
+
+                    tr.className = `transition-all duration-150 border-b border-slate-700/20 ${colorFondo}`;
+                    
+                    tr.innerHTML = `
+                        <td class="py-4 px-6 text-center ${badgeEstilo}">
+                            ${posText}
+                        </td>
+                        <td class="py-4 px-6 flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-xs border border-slate-700">
+                                ${user.Nombre.substring(0, 2).toUpperCase()}
+                            </div>
+                            <span>${user.Nombre}</span>
+                        </td>
+                        <td class="py-4 px-6 text-center">
+                            <span class="text-xs px-3 py-1 rounded-full font-semibold ${premioBadgeStyle}">
+                                ${dinero}
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 text-right font-black text-base sm:text-lg pr-8 text-indigo-400">
+                            ${user.Puntos} <span class="text-xs font-normal text-slate-400">pts</span>
+                        </td>
+                    `;
+                    tabla.appendChild(tr);
+                });
+            } catch (error) {
+                console.error("Error cargando la clasificación:", error);
+                document.getElementById('tabla-clasificacion').innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-10 text-center text-red-400 font-medium">
+                            ❌ No se ha podido cargar la clasificación. Ejecuta tu Python en VS Code.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', cargarClasificacion);
+    </script>
+</body>
+</html>
