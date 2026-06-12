@@ -2,53 +2,56 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Porra Mundial 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 text-white min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
 
-    <div class="max-w-4xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+    <!-- Contenedor optimizado: py-4 reduce la pérdida de espacio superior en móviles -->
+    <div class="max-w-xl mx-auto px-2 py-4 sm:px-4 sm:py-8">
         
-        <header class="text-center mb-12">
-            <span class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-4 animate-pulse">
+        <header class="text-center mb-5">
+            <span class="inline-flex items-center gap-1 py-1 px-2.5 rounded-full text-[10px] sm:text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-2 animate-pulse">
                 🔴 Puntuaciones en vivo
             </span>
-            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-orange-500 to-indigo-500 bg-clip-text text-transparent">
+            <h1 class="text-2xl sm:text-4xl font-black tracking-tight bg-gradient-to-r from-amber-400 via-orange-500 to-indigo-400 bg-clip-text text-transparent">
                 🏆 PORRA MUNDIAL 2026
             </h1>
-            <p class="text-slate-400 mt-3 text-sm sm:text-base max-w-md mx-auto">
-                Clasificación general con el reparto de premios según vuestra tabla oficial.
+            <p class="text-slate-400 mt-1 text-xs sm:text-sm">
+                Clasificación general y reparto de premios oficial
             </p>
         </header>
 
-        <div class="bg-slate-800/60 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50">
-            <div class="p-6 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/30">
+        <!-- Contenedor principal sin bordes excesivos para ganar anchura de pantalla -->
+        <div class="bg-slate-900/80 backdrop-blur-md rounded-xl shadow-xl overflow-hidden border border-slate-800">
+            <div class="px-3 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/40">
                 <div>
-                    <h2 class="text-xl font-bold text-slate-100 tracking-wide">Clasificación y Premios</h2>
-                    <p class="text-xs text-slate-400 mt-0.5">Fase de Grupos en curso</p>
+                    <h2 class="text-sm sm:text-base font-bold text-slate-200">Clasificación en tiempo real</h2>
+                    <p class="text-[10px] sm:text-xs text-slate-500">Fase de Grupos en curso</p>
                 </div>
-                <span class="bg-indigo-500/10 text-indigo-400 text-xs px-3 py-1 rounded-full font-semibold border border-indigo-500/20">
+                <span class="bg-indigo-500/10 text-indigo-400 text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full font-bold border border-indigo-500/20">
                     11 Jugadores
                 </span>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+            <!-- Eliminamos el scroll innecesario forzando la tabla a ajustarse -->
+            <div class="w-full">
+                <table class="w-full text-left table-fixed">
                     <thead>
-                        <tr class="bg-slate-900/40 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700/50">
-                            <th class="py-4 px-6 text-center w-20">Pos</th>
-                            <th class="py-4 px-6">Participante</th>
-                            <th class="py-4 px-6 text-center">Premio</th>
-                            <th class="py-4 px-6 text-right font-bold text-amber-400 pr-8">Total Puntos</th>
+                        <tr class="bg-slate-950/60 text-slate-400 text-[10px] sm:text-xs uppercase tracking-wider border-b border-slate-800">
+                            <th class="py-2 px-2 text-center w-[12%]">Pos</th>
+                            <th class="py-2 px-2 w-[48%]">Participante</th>
+                            <th class="py-2 px-2 text-center w-[22%]">Premio</th>
+                            <th class="py-2 px-3 text-right w-[18%]">Pts</th>
                         </tr>
                     </thead>
-                    <tbody id="tabla-clasificacion" class="divide-y divide-slate-700/30 text-sm sm:text-base">
+                    <tbody id="tabla-clasificacion" class="divide-y divide-slate-800/50 text-xs sm:text-sm">
                         <tr id="loading-state">
-                            <td colspan="4" class="py-10 text-center text-slate-400">
+                            <td colspan="4" class="py-8 text-center text-slate-500">
                                 <div class="flex justify-center items-center gap-2">
-                                    <div class="w-4 h-4 rounded-full bg-indigo-500 animate-bounce"></div>
-                                    <span>Cargando clasificación...</span>
+                                    <div class="w-3 h-3 rounded-full bg-indigo-500 animate-bounce"></div>
+                                    <span class="text-xs">Cargando datos...</span>
                                 </div>
                             </td>
                         </tr>
@@ -57,21 +60,26 @@
             </div>
         </div>
         
-        <div class="mt-4 flex flex-wrap justify-center gap-4 text-xs text-slate-400">
-            <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500/30"></div> Zona de Premios (1º al 9º)</div>
-            <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded bg-red-500/20 border border-red-500/30"></div> Zona Roja (Sin Premio)</div>
+        <!-- Leyenda compacta -->
+        <div class="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[10px] sm:text-xs text-slate-500">
+            <div class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded bg-emerald-500/10 border border-emerald-500/30"></div> Podio (Oro/Plata/Bronce)</div>
+            <div class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded bg-amber-500/10 border border-amber-500/30"></div> Premios de consolación</div>
+            <div class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded bg-rose-500/10 border border-rose-500/30"></div> Zona Roja (0€)</div>
         </div>
 
-        <footer class="mt-12 text-center text-xs text-slate-500">
-            Porra Mundial v1.0 • Diseñado con los premios de la porra
+        <footer class="mt-6 text-center text-[10px] text-slate-600">
+            Porra Mundial v1.1 • Sincronizado con Google Sheets
         </footer>
     </div>
 
     <script>
-        // Tabla de premios oficial de vuestra captura
+        // 💰 Actualizados exactamente según tu imagen de premios real
         const PREMIOS = {
-            1: "70€", 2: "50€", 3: "40€", 4: "25€", 5: "20€",
-            6: "15€", 7: "10€", 8: "5€",  9: "5€",  10: "0€", 11: "0€"
+            1: "70 €", 2: "50 €", 3: "40 €", 
+            4: "20 €", 5: "20 €", 
+            6: "10 €", 
+            7: "5 €",  8: "5 €", 
+            9: "0 €",  10: "0 €", 11: "0 €"
         };
 
         async function cargarClasificacion() {
@@ -86,55 +94,68 @@
                     const posicion = index + 1;
                     const tr = document.createElement('tr');
                     
-                    // 🎨 ASIGNACIÓN DE COLORES DE LA IMAGEN MEDIANTE TAILWIND
-                    let colorFondo = "hover:bg-slate-700/20 text-slate-200";
-                    let badgeEstilo = "text-slate-400 font-bold";
-                    let premioBadgeStyle = "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                    // Configuración por defecto
+                    let colorFondo = "hover:bg-slate-900 text-slate-300";
+                    let badgeEstilo = "font-bold text-slate-400";
+                    let premioBadgeStyle = "";
                     let posText = posicion;
 
+                    // 🎨 FIEL REFLEJO DE LA ESCALA CROMÁTICA DE TU CAPTURA (Captura de pantalla 2026-06-12 102512.png)
                     if (posicion === 1) {
-                        colorFondo = "bg-amber-500/10 hover:bg-amber-500/15 text-amber-300 font-semibold";
-                        badgeEstilo = "text-2xl";
+                        colorFondo = "bg-emerald-950/30 hover:bg-emerald-950/40 text-emerald-300 font-medium";
+                        badgeEstilo = "text-sm sm:text-base";
                         posText = "🥇";
-                        premioBadgeStyle = "bg-amber-500/20 text-amber-300 border border-amber-500/40 font-black";
+                        premioBadgeStyle = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold";
                     } else if (posicion === 2) {
-                        colorFondo = "bg-slate-300/5 hover:bg-slate-300/10 text-slate-300 font-semibold";
-                        badgeEstilo = "text-2xl";
+                        colorFondo = "bg-emerald-900/20 hover:bg-emerald-900/30 text-emerald-200";
+                        badgeEstilo = "text-sm sm:text-base";
                         posText = "🥈";
+                        premioBadgeStyle = "bg-emerald-600/20 text-emerald-200 border border-emerald-600/30";
                     } else if (posicion === 3) {
-                        colorFondo = "bg-orange-500/5 hover:bg-orange-500/10 text-orange-300 font-semibold";
-                        badgeEstilo = "text-2xl";
+                        colorFondo = "bg-teal-950/20 hover:bg-teal-950/30 text-teal-200";
+                        badgeEstilo = "text-sm sm:text-base";
                         posText = "🥉";
-                    } else if (posicion >= 4 && posicion <= 9) {
-                        // Zona Verde (Premios menores)
-                        colorFondo = "bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-200/90";
-                    } else if (posicion >= 10) {
-                        // Zona Roja (0€)
-                        colorFondo = "bg-red-500/5 hover:bg-red-500/10 text-red-300/90";
-                        premioBadgeStyle = "bg-red-500/10 text-red-400 border border-red-500/20 opacity-60";
+                        premioBadgeStyle = "bg-teal-600/20 text-teal-300 border border-teal-600/30";
+                    } else if (posicion === 4 || posicion === 5) {
+                        // Posición 4 y 5: 20€ - Tonos mostaza/marrón apagado
+                        colorFondo = "bg-amber-950/20 hover:bg-amber-950/30 text-amber-200";
+                        premioBadgeStyle = "bg-amber-500/20 text-amber-300 border border-amber-500/30";
+                    } else if (posicion === 6) {
+                        // Posición 6: 10€ - Tono marrón intermedio
+                        colorFondo = "bg-orange-950/20 hover:bg-orange-950/30 text-orange-200";
+                        premioBadgeStyle = "bg-orange-600/20 text-orange-300 border border-orange-600/20";
+                    } else if (posicion === 7 || posicion === 8) {
+                        // Posición 7 y 8: 5€ - Tono naranja claro / arcilla
+                        colorFondo = "bg-orange-900/10 hover:bg-orange-900/20 text-orange-200/90";
+                        premioBadgeStyle = "bg-orange-500/20 text-orange-400 border border-orange-500/20";
+                    } else if (posicion >= 9) {
+                        // Posición 9, 10 y 11: 0€ - Franja Roja Completa
+                        colorFondo = "bg-rose-950/20 hover:bg-rose-950/30 text-rose-300/80";
+                        premioBadgeStyle = "bg-rose-500/10 text-rose-400 border border-rose-500/20 opacity-70";
                     }
 
-                    const dinero = PREMIOS[posicion] || "0€";
+                    const dinero = PREMIOS[posicion] || "0 €";
 
-                    tr.className = `transition-all duration-150 border-b border-slate-700/20 ${colorFondo}`;
+                    tr.className = `transition-colors duration-100 border-b border-slate-900 ${colorFondo}`;
                     
+                    // Estructura optimizada para pantallas móviles estrechas (anchuras fijas por columna)
                     tr.innerHTML = `
-                        <td class="py-4 px-6 text-center ${badgeEstilo}">
+                        <td class="py-2.5 px-2 text-center ${badgeEstilo}">
                             ${posText}
                         </td>
-                        <td class="py-4 px-6 flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-xs border border-slate-700">
+                        <td class="py-2.5 px-2 font-medium truncate flex items-center gap-1.5 min-w-0">
+                            <div class="w-6 h-6 rounded-full bg-slate-950 flex-shrink-0 flex items-center justify-center font-bold text-[10px] text-slate-400 border border-slate-800">
                                 ${user.Nombre.substring(0, 2).toUpperCase()}
                             </div>
-                            <span>${user.Nombre}</span>
+                            <span class="truncate block pr-1">${user.Nombre}</span>
                         </td>
-                        <td class="py-4 px-6 text-center">
-                            <span class="text-xs px-3 py-1 rounded-full font-semibold ${premioBadgeStyle}">
+                        <td class="py-2.5 px-2 text-center whitespace-nowrap">
+                            <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded font-medium ${premioBadgeStyle}">
                                 ${dinero}
                             </span>
                         </td>
-                        <td class="py-4 px-6 text-right font-black text-base sm:text-lg pr-8 text-indigo-400">
-                            ${user.Puntos} <span class="text-xs font-normal text-slate-400">pts</span>
+                        <td class="py-2.5 px-3 text-right font-bold text-indigo-400">
+                            ${user.Puntos}<span class="text-[10px] font-normal text-slate-500 ml-0.5">p</span>
                         </td>
                     `;
                     tabla.appendChild(tr);
@@ -143,8 +164,8 @@
                 console.error("Error cargando la clasificación:", error);
                 document.getElementById('tabla-clasificacion').innerHTML = `
                     <tr>
-                        <td colspan="4" class="py-10 text-center text-red-400 font-medium">
-                            ❌ No se ha podido cargar la clasificación. Ejecuta tu Python en VS Code.
+                        <td colspan="4" class="py-8 text-center text-rose-400 font-medium text-xs">
+                            ❌ Error al sincronizar el JSON con GitHub.
                         </td>
                     </tr>
                 `;
