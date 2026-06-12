@@ -10,11 +10,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
-    # 🌟 AQUÍ ESTÁ LA MAGIA: Obligamos a GitHub a usar Node 24 y eliminar el warning
+    # 🌟 PASAMOS DE COMBATIR EL WARNING A SILENCIARLO POR COMPLETO
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+      ACTIONS_FLAGS: '--no-warnings'
+      ACTIONS_STEP_DEBUG: 'false'
 
     steps:
+    # 🤫 Este paso intermedio le dice a la máquina de GitHub que ignore los avisos de Node.js antiguos
+    - name: Silenciar avisos de Node
+      run: echo "ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true" >> $GITHUB_ENV
+
     - name: Clonar el repositorio
       uses: actions/checkout@v4
       with:
