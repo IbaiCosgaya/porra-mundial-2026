@@ -84,7 +84,7 @@
 
         async function cargarClasificacion() {
             try {
-                const respuesta = await fetch('clasificacion.json');
+                const respuesta = await fetch('https://ibaicosgaya.github.io/porra-mundial-2026/clasificacion.json');
                 const datos = await respuesta.json();
                 
                 const tabla = document.getElementById('tabla-clasificacion');
