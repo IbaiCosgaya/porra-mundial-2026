@@ -10,11 +10,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
-    # 🌟 AQUÍ ESTÁ LA MAGIA: Obligamos a GitHub a usar Node 24 y eliminar el warning
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+      ACTIONS_FLAGS: '--no-warnings'
 
     steps:
+    - name: Silenciar avisos de Node
+      run: echo "ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true" >> $GITHUB_ENV
+
     - name: Clonar el repositorio
       uses: actions/checkout@v4
       with:
@@ -35,9 +37,9 @@ jobs:
         GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
       run: python procesar_puntos.py
 
-    - name: Guardar cambios del JSON en el repositorio
+    - name: Guardar cambios en el repositorio público
       run: |
-        git config --global user.name 'IbaiCosgaya'
+        git config --global user.name 'PorraBot'
         git config --global user.email 'porrabot@github.com'
         git add clasificacion.json
         git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Clasificación actualizada automáticamente" && git push)
