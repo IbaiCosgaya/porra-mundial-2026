@@ -1,3 +1,5 @@
+import os
+import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
@@ -5,20 +7,12 @@ from datetime import datetime
 
 DOCUMENTO_ID = "1G4cyvvzsPw7p4yDgXiuPorsP9CDnqPuSXC-wR_H4IIY"
 
-import os
-import json
-
-# ... (resto de funciones de cálculo se quedan igual)
-
 def conectar_google_sheets():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    
-    # Intentar leer desde las variables secretas de GitHub Actions
     if "GOOGLE_CREDENTIALS" in os.environ:
         creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS"])
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     else:
-        # Por si lo sigues ejecutando en local en tu PC
         creds = ServiceAccountCredentials.from_json_keyfile_name("credenciales.json", scope)
         
     cliente = gspread.authorize(creds)
@@ -37,24 +31,16 @@ def normalizar_texto(texto):
     return t
 
 def celda_a_marcador(valor):
-    """
-    Convierte el texto de la celda al marcador 'local-visitante'.
-    Si Excel lo transformó en texto de fecha (ej: '3-ene', '03/01'), 
-    lo parsea y extrae el día (local) y el mes (visitante).
-    """
     if not valor: return None
     v_str = str(valor).strip()
     
-    # Caso 1: Ya es un formato limpio '3-1' o '2-0'
     if '-' in v_str and not any(c.isalpha() for c in v_str):
         return v_str
 
-    # Caso 2: Intentar detectar si Google Sheets lo pasó como texto de fecha
     formatos_fecha = ["%d-%b", "%d/%m", "%d-%m", "%b-%d"]
     for formato in formatos_fecha:
         try:
             dt = datetime.strptime(v_str, formato)
-            # Reemplazamos el año por el actual si hace falta, pero nos interesan día y mes
             return f"{dt.day}-{dt.month}"
         except ValueError:
             continue
@@ -62,13 +48,8 @@ def celda_a_marcador(valor):
     return v_str
 
 def celda_a_regla_partido(valor):
-    """
-    Convierte la columna D al string de regla correcto.
-    Si viene como fecha (ej: '5-feb' o '5/2' convertido), extrae día/mes.
-    """
     if not valor: return ""
     v_str = str(valor).strip()
-    
     formatos_fecha = ["%d-%b", "%d/%m", "%d-%m"]
     for formato in formatos_fecha:
         try:
@@ -83,41 +64,45 @@ try:
     hoja_excel = conectar_google_sheets()
     todas_las_filas = hoja_excel.get_all_values()
     
+    # La fila 0 contiene los títulos o nombres de las columnas
     fila_nombres = todas_las_filas[0]
 
     participantes = {}
+    # Mapeamos los participantes basándonos en las columnas a partir de la F (índice 5)
     for idx, nombre in enumerate(fila_nombres):
         nombre_limpio = nombre.strip()
-        if nombre_limpio and nombre_limpio not in ("PORRA MUNDIAL 2026", "Resultado real"):
+        if nombre_limpio and nombre_limpio not in ("PORRA MUNDIAL 2026", "Resultado real", "FECHA", "HORA", "PARTIDO", "Exacto/1X2", ""):
+            # Guardamos la columna exacta de cada participante (ej: Asier está en la columna F -> índice 5)
             participantes[nombre_limpio] = {"col_apuesta": idx, "puntos_totales": 0}
 
-    print("✅ Participantes mapeados:", list(participantes.keys()))
+    print("✅ Participantes mapeados con sus columnas:", list(participantes.keys()))
 
-    for idx, fila in enumerate(todas_las_filas[2:], start=3):
+    # Recorremos todas las filas de datos (empezando desde el índice 1, que es la fila 2 de Excel)
+    for idx, fila in enumerate(todas_las_filas[1:], start=2):
         if len(fila) < 6: continue
 
+        # Extraemos las columnas base (C, D, E) correspondientes a los índices 2, 3 y 4
         pregunta_partido = fila[2].strip()
-        regla_raw = fila[3]
-        col_resultado_real = fila[4]
+        regla_raw = fila[3].strip()
+        col_resultado_real = fila[4].strip()
 
-        # Si no hay resultado real en la columna E, ignoramos la fila por completo
-        if not col_resultado_real or str(col_resultado_real).strip() == "":
+        # Si no hay resultado real definitivo puesto en la columna E, saltamos la fila
+        if not col_resultado_real:
             continue
 
-        # Convertir regla protegiéndola de las fechas (ej: '5/2')
         regla_puntos = celda_a_regla_partido(regla_raw)
+        real_norm = normalizar_texto(col_resultado_real)
 
-        # Detectar tipo de fila de forma estricta
-        if "/" in regla_puntos and not regla_puntos.replace("/","").replace(" ","").isdigit():
-            tipo = "SI_NO"
-        elif "5/2" in regla_puntos or "/" in regla_puntos or "-" in pregunta_partido:
+        # 🎯 DETECTAR TIPO DE FILA
+        # Si la regla contiene "5/2" o la celda real tiene un guion de marcador (ej: "2-0")
+        if "5/2" in regla_raw or "5/2" in regla_puntos or ("-" in col_resultado_real and not any(c.isalpha() for c in col_resultado_real)):
             tipo = "PARTIDO"
+        elif "/" in regla_raw and ("S" in regla_raw.upper() or "N" in regla_raw.upper()):
+            tipo = "SI_NO"
         else:
             tipo = "PREGUNTA_ABIERTA"
 
-        real_norm = normalizar_texto(str(col_resultado_real))
-
-        # --- PROCESAR PARTIDOS ---
+        # --- ⚽ PROCESAR PARTIDOS ⚽ ---
         if tipo == "PARTIDO":
             marcador_real = celda_a_marcador(col_resultado_real)
             if not marcador_real or '-' not in marcador_real:
@@ -126,63 +111,49 @@ try:
                 re_l, re_v = map(int, marcador_real.split("-"))
                 signo_real = calcular_resultado_1X2(re_l, re_v)
             except ValueError:
-                print(f"  ⚠️ No se puede parsear resultado real '{col_resultado_real}' en fila {idx}")
                 continue
 
             for nombre, cols in participantes.items():
-                val_local = fila[cols["col_apuesta"]].strip()
-                val_visit = fila[cols["col_apuesta"] + 1].strip()
-
-                # Si las celdas están vacías, no apostó
-                if val_local == "" or val_visit == "":
+                # Cada participante tiene su apuesta completa (ej: "3-1") en SU PROPIA COLUMNA
+                val_apuesta = fila[cols["col_apuesta"]].strip()
+                if not val_apuesta:
                     continue
 
-                # Forzar conversión anti-fechas por si acaso para las celdas individuales
-                ap_l_clean = celda_a_marcador(val_local) if '-' in val_local else val_local
-                ap_v_clean = celda_a_marcador(val_visit) if '-' in val_visit else val_visit
+                marcador_apuesta = celda_a_marcador(val_apuesta)
+                if not marcador_apuesta or '-' not in marcador_apuesta:
+                    continue
 
                 try:
-                    # Al estar divididos en dos celdas, los leemos directamente como enteros
-                    ap_l = int(ap_l_clean)
-                    ap_v = int(ap_v_clean)
+                    ap_l, ap_v = map(int, marcador_apuesta.split("-"))
                     signo_apuesta = calcular_resultado_1X2(ap_l, ap_v)
 
                     if ap_l == re_l and ap_v == re_v:
-                        participantes[nombre]["puntos_totales"] += 5
+                        participantes[nombre]["puntos_totales"] += 5  # Pleno al marcador exacto
                     elif signo_apuesta == signo_real:
-                        participantes[nombre]["puntos_totales"] += 2
+                        participantes[nombre]["puntos_totales"] += 2  # Acierto de 1X2
                 except ValueError:
-                    # Por si metieron un guion dentro de una celda individual por error
-                    try:
-                        marcador_combinado = celda_a_marcador(val_local)
-                        ap_l, ap_v = map(int, marcador_combinado.split("-"))
-                        signo_apuesta = calcular_resultado_1X2(ap_l, ap_v)
-                        if ap_l == re_l and ap_v == re_v:
-                            participantes[nombre]["puntos_totales"] += 5
-                        elif signo_apuesta == signo_real:
-                            participantes[nombre]["puntos_totales"] += 2
-                    except:
-                        pass
+                    pass
 
-        # --- PROCESAR SÍ / NO ---
+        # --- 🔲 PROCESAR SÍ / NO 🔲 ---
         elif tipo == "SI_NO":
-            letra_real = "S" if real_norm == "SI" else "N"
+            letra_real = "S" if real_norm in ("SI", "S") else "N"
             puntos_por_acierto = 0
-            for p in regla_puntos.upper().replace(" ", "").split("/"):
+            # Parseamos reglas del tipo S10 / N3
+            for p in regla_raw.upper().replace(" ", "").split("/"):
                 if p.startswith(letra_real):
                     nums = ''.join(filter(str.isdigit, p))
                     puntos_por_acierto = int(nums) if nums else 0
 
             for nombre, cols in participantes.items():
                 apuesta_user = normalizar_texto(fila[cols["col_apuesta"]])
-                letra_apuesta = "S" if apuesta_user == "SI" else "N"
+                letra_apuesta = "S" if apuesta_user in ("SI", "S") else "N"
                 if letra_apuesta == letra_real:
                     participantes[nombre]["puntos_totales"] += puntos_por_acierto
 
-        # --- PROCESAR PREGUNTAS ABIERTAS ---
+        # --- 📝 PROCESAR PREGUNTAS ABIERTAS 📝 ---
         elif tipo == "PREGUNTA_ABIERTA":
             try:
-                nums = ''.join(filter(str.isdigit, regla_puntos))
+                nums = ''.join(filter(str.isdigit, regla_raw))
                 puntos_regla = int(nums) if nums else 10
             except:
                 puntos_regla = 10
@@ -192,14 +163,15 @@ try:
                 if apuesta_user == real_norm:
                     participantes[nombre]["puntos_totales"] += puntos_regla
 
-    # Generación de Ranking
+    # Generación de Ranking Final Ordenado
     ranking = [{"Nombre": k, "Puntos": v["puntos_totales"]} for k, v in participantes.items()]
     df_ranking = pd.DataFrame(ranking).sort_values(by="Puntos", ascending=False).reset_index(drop=True)
     df_ranking.index += 1
 
-    print("\n🏆 CLASIFICACIÓN CORREGIDA CON ARREGLO DE FECHAS 🏆")
+    print("\n🏆 CLASIFICACIÓN CORREGIDA 🏆")
     print(df_ranking)
 
+    # Guardar cambios
     datos_json = df_ranking.to_json(orient="records", force_ascii=False, indent=4)
     with open("clasificacion.json", "w", encoding="utf-8") as f:
         f.write(datos_json)
