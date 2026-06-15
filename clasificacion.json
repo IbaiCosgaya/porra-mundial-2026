@@ -1,7 +1,11 @@
 [
     {
         "Nombre":"Asier",
-        "Puntos":7
+        "Puntos":12
+    },
+    {
+        "Nombre":"Rufo",
+        "Puntos":10
     },
     {
         "Nombre":"Beñat",
@@ -12,7 +16,15 @@
         "Puntos":7
     },
     {
-        "Nombre":"Rufo",
+        "Nombre":"Txino",
+        "Puntos":7
+    },
+    {
+        "Nombre":"Mikelgo",
+        "Puntos":7
+    },
+    {
+        "Nombre":"Remi",
         "Puntos":5
     },
     {
@@ -20,27 +32,15 @@
         "Puntos":5
     },
     {
-        "Nombre":"Remi",
-        "Puntos":5
-    },
-    {
-        "Nombre":"Txino",
-        "Puntos":5
-    },
-    {
-        "Nombre":"Mikelgo",
-        "Puntos":5
+        "Nombre":"Ioritz",
+        "Puntos":4
     },
     {
         "Nombre":"Koski",
         "Puntos":2
     },
     {
-        "Nombre":"Ioritz",
-        "Puntos":2
-    },
-    {
         "Nombre":"Manri",
-        "Puntos":0
+        "Puntos":2
     }
 ]
