@@ -8,11 +8,15 @@
         "Puntos":26
     },
     {
-        "Nombre":"Villa",
+        "Nombre":"Beñat",
         "Puntos":25
     },
     {
         "Nombre":"Mikelgo",
+        "Puntos":25
+    },
+    {
+        "Nombre":"Villa",
         "Puntos":25
     },
     {
@@ -28,19 +32,15 @@
         "Puntos":21
     },
     {
-        "Nombre":"Ioritz",
+        "Nombre":"Koski",
         "Puntos":20
     },
     {
-        "Nombre":"Koski",
+        "Nombre":"Ioritz",
         "Puntos":20
     },
     {
         "Nombre":"Manri",
         "Puntos":18
-    },
-    {
-        "Nombre":"Beñat",
-        "Puntos":15
     }
 ]
