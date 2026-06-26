@@ -1,9 +1,5 @@
 [
     {
-        "Nombre":"Villa",
-        "Puntos":45
-    },
-    {
         "Nombre":"Remi",
         "Puntos":40
     },
@@ -12,11 +8,15 @@
         "Puntos":38
     },
     {
+        "Nombre":"Asier",
+        "Puntos":35
+    },
+    {
         "Nombre":"Beñat",
         "Puntos":35
     },
     {
-        "Nombre":"Asier",
+        "Nombre":"Villa",
         "Puntos":35
     },
     {
