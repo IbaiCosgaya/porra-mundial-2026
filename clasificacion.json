@@ -1,46 +1,14 @@
 [
     {
-        "Nombre":"Remi",
-        "Puntos":60
+        "Nombre":"Pregunta\/Partido",
+        "Puntos":0
     },
     {
-        "Nombre":"Rufo",
-        "Puntos":56
+        "Nombre":"Puntos",
+        "Puntos":0
     },
     {
-        "Nombre":"Ioritz",
-        "Puntos":54
-    },
-    {
-        "Nombre":"Mikelgo",
-        "Puntos":53
-    },
-    {
-        "Nombre":"Manri",
-        "Puntos":53
-    },
-    {
-        "Nombre":"Valle",
-        "Puntos":52
-    },
-    {
-        "Nombre":"Villa",
-        "Puntos":52
-    },
-    {
-        "Nombre":"Txino",
-        "Puntos":51
-    },
-    {
-        "Nombre":"Beñat",
-        "Puntos":50
-    },
-    {
-        "Nombre":"Asier",
-        "Puntos":40
-    },
-    {
-        "Nombre":"Koski",
-        "Puntos":39
+        "Nombre":"Apuesta",
+        "Puntos":0
     }
 ]
