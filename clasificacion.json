@@ -1,14 +1,22 @@
 [
     {
-        "Nombre":"Pregunta\/Partido",
+        "Nombre":"ANTES DE 16AVOS",
         "Puntos":0
     },
     {
-        "Nombre":"Puntos",
+        "Nombre":"B1*",
         "Puntos":0
     },
     {
-        "Nombre":"Apuesta",
+        "Nombre":"Ronda ESP eliminado (u otro equipo, si ESP eliminado)",
+        "Puntos":0
+    },
+    {
+        "Nombre":"5",
+        "Puntos":0
+    },
+    {
+        "Nombre":"Cuartos",
         "Puntos":0
     }
 ]
