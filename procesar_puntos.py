@@ -16,7 +16,9 @@ def conectar_google_sheets():
         creds = ServiceAccountCredentials.from_json_keyfile_name("credenciales.json", scope)
         
     cliente = gspread.authorize(creds)
-    return cliente.open_by_key(DOCUMENTO_ID).get_worksheet(0)
+    
+    # 🚨 CORRECCIÓN CLAVE: Abrimos la pestaña correcta por su nombre exacto
+    return cliente.open_by_key(DOCUMENTO_ID).worksheet("Preguntas y resultados")
 
 def calcular_resultado_1X2(goles_l, goles_v):
     if goles_l > goles_v: return '1'
@@ -37,7 +39,7 @@ def celda_a_marcador(valor):
     if '-' in v_str and not any(c.isalpha() for c in v_str):
         return v_str
 
-    formatos_fecha = ["%d-%b", "%d/%m", "%d-%m", "%b-%d"]
+    formatos_fecha = ["%d-%b", "%d/%m", "%d-%m", "%b-%d", "%Y-%m-%d"]
     for formato in formatos_fecha:
         try:
             dt = datetime.strptime(v_str, formato)
@@ -60,55 +62,53 @@ def celda_a_regla_partido(valor):
     return v_str
 
 try:
-    print("🔄 Conectando con Google Sheets...")
+    print("🔄 Conectando con la pestaña 'Preguntas y resultados'...")
     hoja_excel = conectar_google_sheets()
     todas_las_filas = hoja_excel.get_all_values()
     
-    # === 🚨 CORRECCIÓN DE CABECERA 🚨 ===
-    # Villa ha metido filas superiores. Buscaremos dinámicamente la fila que contiene a los participantes reales.
+    # Buscamos la fila de cabecera real analizando dónde están listados tus amigos
     fila_nombres = []
     indice_fila_nombres = 0
     
     for idx_f, fila in enumerate(todas_las_filas):
-        # Buscamos la fila donde aparezcan palabras clave como "Asier" o "Beñat" para identificar la cabecera real
         fila_str = [str(celda).strip() for celda in fila]
         if "Asier" in fila_str or "Beñat" in fila_str or "Rufo" in fila_str:
             fila_nombres = fila
             indice_fila_nombres = idx_f
             break
             
-    # Si por alguna razón no los encuentra con nombres dinámicos, usamos por defecto la fila 1 (segunda línea de la porra)
     if not fila_nombres:
-        fila_nombres = todas_las_filas[1]
-        indice_fila_nombres = 1
+        # Fallback por si acaso
+        fila_nombres = todas_las_filas[0]
+        indice_fila_nombres = 0
 
     participantes = {}
-    palabras_excluidas = ("PORRA MUNDIAL 2026", "Resultado real", "FECHA", "HORA", "PARTIDO", "Exacto/1X2", "Puntos", "Apuesta", "Pregunta/Partido", "")
+    palabras_excluidas = ("PORRA MUNDIAL 2026", "Resultado real", "FECHA", "HORA", "PARTIDO", "Exacto/1X2", "Puntos", "Apuesta", "Pregunta/Partido", "Exacto/1X2 (90min)", "")
     
+    # Mapeamos las columnas exactas de cada amigo en la pestaña global (Asier será col 5, Rufo col 6, etc.)
     for idx, nombre in enumerate(fila_nombres):
         nombre_limpio = nombre.strip()
         if nombre_limpio and nombre_limpio not in palabras_excluidas:
             participantes[nombre_limpio] = {"col_apuesta": idx, "puntos_totales": 0}
 
-    print("✅ Participantes mapeados con sus columnas:", list(participantes.keys()))
+    print("✅ Participantes reales localizados:", list(participantes.keys()))
 
-    # Recorremos todas las filas de datos JUSTO DESPUÉS de la fila de nombres de los participantes
+    # Procesamos las filas de preguntas y partidos
     for idx, fila in enumerate(todas_las_filas[indice_fila_nombres + 1:], start=indice_fila_nombres + 2):
         if len(fila) < 6: continue
 
-        # Extraemos las columnas base (C, D, E) correspondientes a los índices 2, 3 y 4
         pregunta_partido = fila[2].strip()
         regla_raw = fila[3].strip()
         col_resultado_real = fila[4].strip()
 
-        # Si no hay resultado real definitivo puesto en la columna E, o si la fila es otra cabecera repetida, saltamos la fila
+        # Si no hay resultado real en la columna E, pasamos olímpicamente de la fila
         if not col_resultado_real or col_resultado_real in palabras_excluidas:
             continue
 
         regla_puntos = celda_a_regla_partido(regla_raw)
         real_norm = normalizar_texto(col_resultado_real)
 
-        # 🎯 DETECTAR TIPO DE FILA
+        # 🎯 Clasificar tipo de fila
         if "5/2" in regla_raw or "5/2" in regla_puntos or ("-" in col_resultado_real and not any(c.isalpha() for c in col_resultado_real)):
             tipo = "PARTIDO"
         elif "/" in regla_raw and ("S" in regla_raw.upper() or "N" in regla_raw.upper()):
@@ -116,7 +116,7 @@ try:
         else:
             tipo = "PREGUNTA_ABIERTA"
 
-        # --- ⚽ PROCESAR PARTIDOS ⚽ ---
+        # --- ⚽ PARTIDOS ---
         if tipo == "PARTIDO":
             marcador_real = celda_a_marcador(col_resultado_real)
             if not marcador_real or '-' not in marcador_real:
@@ -141,13 +141,13 @@ try:
                     signo_apuesta = calcular_resultado_1X2(ap_l, ap_v)
 
                     if ap_l == re_l and ap_v == re_v:
-                        participantes[nombre]["puntos_totales"] += 5  # Pleno
+                        participantes[nombre]["puntos_totales"] += 5
                     elif signo_apuesta == signo_real:
-                        participantes[nombre]["puntos_totales"] += 2  # Acierto 1X2
+                        participantes[nombre]["puntos_totales"] += 2
                 except ValueError:
                     pass
 
-        # --- 🔲 PROCESAR SÍ / NO 🔲 ---
+        # --- 🔲 SÍ / NO ---
         elif tipo == "SI_NO":
             letra_real = "S" if real_norm in ("SI", "S") else "N"
             puntos_por_acierto = 0
@@ -162,7 +162,7 @@ try:
                 if letra_apuesta == letra_real:
                     participantes[nombre]["puntos_totales"] += puntos_por_acierto
 
-        # --- 📝 PROCESAR PREGUNTAS ABIERTAS 📝 ---
+        # --- 📝 PREGUNTA ABIERTA ---
         elif tipo == "PREGUNTA_ABIERTA":
             try:
                 nums = ''.join(filter(str.isdigit, regla_raw))
@@ -175,19 +175,19 @@ try:
                 if apuesta_user == real_norm:
                     participantes[nombre]["puntos_totales"] += puntos_regla
 
-    # Generación de Ranking Final Ordenado
+    # Generación del DataFrame de Ranking Ordenado
     ranking = [{"Nombre": k, "Puntos": v["puntos_totales"]} for k, v in participantes.items()]
     df_ranking = pd.DataFrame(ranking).sort_values(by="Puntos", ascending=False).reset_index(drop=True)
     df_ranking.index += 1
 
-    print("\n🏆 CLASIFICACIÓN CORREGIDA CON DINAMISMO 🏆")
+    print("\n🏆 CLASIFICACIÓN REAL CALCULADA 🏆")
     print(df_ranking)
 
-    # Guardar cambios
+    # Exportamos a JSON limpio
     datos_json = df_ranking.to_json(orient="records", force_ascii=False, indent=4)
     with open("clasificacion.json", "w", encoding="utf-8") as f:
         f.write(datos_json)
-    print("\n💾 'clasificacion.json' actualizado con éxito!")
+    print("\n💾 'clasificacion.json' sincronizado correctamente!")
 
 except Exception as e:
     import traceback
