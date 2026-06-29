@@ -16,8 +16,6 @@ def conectar_google_sheets():
         creds = ServiceAccountCredentials.from_json_keyfile_name("credenciales.json", scope)
         
     cliente = gspread.authorize(creds)
-    
-    # 🚨 CORRECCIÓN CLAVE: Abrimos la pestaña correcta por su nombre exacto
     return cliente.open_by_key(DOCUMENTO_ID).worksheet("Preguntas y resultados")
 
 def calcular_resultado_1X2(goles_l, goles_v):
@@ -49,24 +47,11 @@ def celda_a_marcador(valor):
             
     return v_str
 
-def celda_a_regla_partido(valor):
-    if not valor: return ""
-    v_str = str(valor).strip()
-    formatos_fecha = ["%d-%b", "%d/%m", "%d-%m"]
-    for formato in formatos_fecha:
-        try:
-            dt = datetime.strptime(v_str, formato)
-            return f"{dt.day}/{dt.month}"
-        except ValueError:
-            continue
-    return v_str
-
 try:
     print("🔄 Conectando con la pestaña 'Preguntas y resultados'...")
     hoja_excel = conectar_google_sheets()
     todas_las_filas = hoja_excel.get_all_values()
     
-    # Buscamos la fila de cabecera real analizando dónde están listados tus amigos
     fila_nombres = []
     indice_fila_nombres = 0
     
@@ -78,14 +63,12 @@ try:
             break
             
     if not fila_nombres:
-        # Fallback por si acaso
         fila_nombres = todas_las_filas[0]
         indice_fila_nombres = 0
 
     participantes = {}
     palabras_excluidas = ("PORRA MUNDIAL 2026", "Resultado real", "FECHA", "HORA", "PARTIDO", "Exacto/1X2", "Puntos", "Apuesta", "Pregunta/Partido", "Exacto/1X2 (90min)", "")
     
-    # Mapeamos las columnas exactas de cada amigo en la pestaña global (Asier será col 5, Rufo col 6, etc.)
     for idx, nombre in enumerate(fila_nombres):
         nombre_limpio = nombre.strip()
         if nombre_limpio and nombre_limpio not in palabras_excluidas:
@@ -93,7 +76,6 @@ try:
 
     print("✅ Participantes reales localizados:", list(participantes.keys()))
 
-    # Procesamos las filas de preguntas y partidos
     for idx, fila in enumerate(todas_las_filas[indice_fila_nombres + 1:], start=indice_fila_nombres + 2):
         if len(fila) < 6: continue
 
@@ -101,22 +83,39 @@ try:
         regla_raw = fila[3].strip()
         col_resultado_real = fila[4].strip()
 
-        # Si no hay resultado real en la columna E, pasamos olímpicamente de la fila
         if not col_resultado_real or col_resultado_real in palabras_excluidas:
             continue
 
-        regla_puntos = celda_a_regla_partido(regla_raw)
         real_norm = normalizar_texto(col_resultado_real)
 
-        # 🎯 Clasificar tipo de fila
-        if "5/2" in regla_raw or "5/2" in regla_puntos or ("-" in col_resultado_real and not any(c.isalpha() for c in col_resultado_real)):
+        # 🎯 DETECTAR TIPO DE FILA Y EXTRAER REGLA DINÁMICA
+        # Buscaremos patrones tipo "5/2", "6/3", "7/3" en la columna de la regla
+        es_partido = False
+        puntos_pleno = 5  # Por defecto
+        puntos_1X2 = 2    # Por defecto
+
+        if "/" in regla_raw and not any(c in regla_raw.upper() for c in ("S", "N")):
+            partes_regla = regla_raw.split("/")
+            if len(partes_regla) == 2:
+                try:
+                    puntos_pleno = int(''.join(filter(str.isdigit, partes_regla[0])))
+                    puntos_1X2 = int(''.join(filter(str.isdigit, partes_regla[1])))
+                    es_partido = True
+                except ValueError:
+                    pass
+
+        # Forzar tipo partido si la celda tiene formato marcador puro tipo "2-1"
+        if "-" in col_resultado_real and not any(c.isalpha() for c in col_resultado_real):
+            es_partido = True
+
+        if es_partido:
             tipo = "PARTIDO"
         elif "/" in regla_raw and ("S" in regla_raw.upper() or "N" in regla_raw.upper()):
             tipo = "SI_NO"
         else:
             tipo = "PREGUNTA_ABIERTA"
 
-        # --- ⚽ PARTIDOS ---
+        # --- ⚽ PROCESAR PARTIDOS (CON REGLA DINÁMICA 5/2, 6/3...) ---
         if tipo == "PARTIDO":
             marcador_real = celda_a_marcador(col_resultado_real)
             if not marcador_real or '-' not in marcador_real:
@@ -140,14 +139,15 @@ try:
                     ap_l, ap_v = map(int, marcador_apuesta.split("-"))
                     signo_apuesta = calcular_resultado_1X2(ap_l, ap_v)
 
+                    # Aplicamos dinámicamente los puntos que correspondan a esta fila
                     if ap_l == re_l and ap_v == re_v:
-                        participantes[nombre]["puntos_totales"] += 5
+                        participantes[nombre]["puntos_totales"] += puntos_pleno
                     elif signo_apuesta == signo_real:
-                        participantes[nombre]["puntos_totales"] += 2
+                        participantes[nombre]["puntos_totales"] += puntos_1X2
                 except ValueError:
                     pass
 
-        # --- 🔲 SÍ / NO ---
+        # --- 🔲 PROCESAR SÍ / NO ---
         elif tipo == "SI_NO":
             letra_real = "S" if real_norm in ("SI", "S") else "N"
             puntos_por_acierto = 0
@@ -162,7 +162,7 @@ try:
                 if letra_apuesta == letra_real:
                     participantes[nombre]["puntos_totales"] += puntos_por_acierto
 
-        # --- 📝 PREGUNTA ABIERTA ---
+        # --- 📝 PROCESAR PREGUNTAS ABIERTAS ---
         elif tipo == "PREGUNTA_ABIERTA":
             try:
                 nums = ''.join(filter(str.isdigit, regla_raw))
@@ -175,15 +175,14 @@ try:
                 if apuesta_user == real_norm:
                     participantes[nombre]["puntos_totales"] += puntos_regla
 
-    # Generación del DataFrame de Ranking Ordenado
+    # Ranking Final Ordenado
     ranking = [{"Nombre": k, "Puntos": v["puntos_totales"]} for k, v in participantes.items()]
     df_ranking = pd.DataFrame(ranking).sort_values(by="Puntos", ascending=False).reset_index(drop=True)
     df_ranking.index += 1
 
-    print("\n🏆 CLASIFICACIÓN REAL CALCULADA 🏆")
+    print("\n🏆 CLASIFICACIÓN REAL CALCULADA (PUNTOS DINÁMICOS) 🏆")
     print(df_ranking)
 
-    # Exportamos a JSON limpio
     datos_json = df_ranking.to_json(orient="records", force_ascii=False, indent=4)
     with open("clasificacion.json", "w", encoding="utf-8") as f:
         f.write(datos_json)
