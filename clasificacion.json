@@ -1,22 +1,46 @@
 [
     {
-        "Nombre":"ANTES DE 16AVOS",
-        "Puntos":0
+        "Nombre":"Remi",
+        "Puntos":62
     },
     {
-        "Nombre":"B1*",
-        "Puntos":0
+        "Nombre":"Rufo",
+        "Puntos":58
     },
     {
-        "Nombre":"Ronda ESP eliminado (u otro equipo, si ESP eliminado)",
-        "Puntos":0
+        "Nombre":"Villa",
+        "Puntos":57
     },
     {
-        "Nombre":"5",
-        "Puntos":0
+        "Nombre":"Ioritz",
+        "Puntos":56
     },
     {
-        "Nombre":"Cuartos",
-        "Puntos":0
+        "Nombre":"Beñat",
+        "Puntos":55
+    },
+    {
+        "Nombre":"Manri",
+        "Puntos":55
+    },
+    {
+        "Nombre":"Mikelgo",
+        "Puntos":55
+    },
+    {
+        "Nombre":"Valle",
+        "Puntos":54
+    },
+    {
+        "Nombre":"Txino",
+        "Puntos":53
+    },
+    {
+        "Nombre":"Asier",
+        "Puntos":42
+    },
+    {
+        "Nombre":"Koski",
+        "Puntos":39
     }
 ]
