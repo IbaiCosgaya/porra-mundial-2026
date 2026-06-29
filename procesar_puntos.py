@@ -64,21 +64,36 @@ try:
     hoja_excel = conectar_google_sheets()
     todas_las_filas = hoja_excel.get_all_values()
     
-    # La fila 0 contiene los títulos o nombres de las columnas
-    fila_nombres = todas_las_filas[0]
+    # === 🚨 CORRECCIÓN DE CABECERA 🚨 ===
+    # Villa ha metido filas superiores. Buscaremos dinámicamente la fila que contiene a los participantes reales.
+    fila_nombres = []
+    indice_fila_nombres = 0
+    
+    for idx_f, fila in enumerate(todas_las_filas):
+        # Buscamos la fila donde aparezcan palabras clave como "Asier" o "Beñat" para identificar la cabecera real
+        fila_str = [str(celda).strip() for celda in fila]
+        if "Asier" in fila_str or "Beñat" in fila_str or "Rufo" in fila_str:
+            fila_nombres = fila
+            indice_fila_nombres = idx_f
+            break
+            
+    # Si por alguna razón no los encuentra con nombres dinámicos, usamos por defecto la fila 1 (segunda línea de la porra)
+    if not fila_nombres:
+        fila_nombres = todas_las_filas[1]
+        indice_fila_nombres = 1
 
     participantes = {}
-    # Mapeamos los participantes basándonos en las columnas a partir de la F (índice 5)
+    palabras_excluidas = ("PORRA MUNDIAL 2026", "Resultado real", "FECHA", "HORA", "PARTIDO", "Exacto/1X2", "Puntos", "Apuesta", "Pregunta/Partido", "")
+    
     for idx, nombre in enumerate(fila_nombres):
         nombre_limpio = nombre.strip()
-        if nombre_limpio and nombre_limpio not in ("PORRA MUNDIAL 2026", "Resultado real", "FECHA", "HORA", "PARTIDO", "Exacto/1X2", ""):
-            # Guardamos la columna exacta de cada participante (ej: Asier está en la columna F -> índice 5)
+        if nombre_limpio and nombre_limpio not in palabras_excluidas:
             participantes[nombre_limpio] = {"col_apuesta": idx, "puntos_totales": 0}
 
     print("✅ Participantes mapeados con sus columnas:", list(participantes.keys()))
 
-    # Recorremos todas las filas de datos (empezando desde el índice 1, que es la fila 2 de Excel)
-    for idx, fila in enumerate(todas_las_filas[1:], start=2):
+    # Recorremos todas las filas de datos JUSTO DESPUÉS de la fila de nombres de los participantes
+    for idx, fila in enumerate(todas_las_filas[indice_fila_nombres + 1:], start=indice_fila_nombres + 2):
         if len(fila) < 6: continue
 
         # Extraemos las columnas base (C, D, E) correspondientes a los índices 2, 3 y 4
@@ -86,15 +101,14 @@ try:
         regla_raw = fila[3].strip()
         col_resultado_real = fila[4].strip()
 
-        # Si no hay resultado real definitivo puesto en la columna E, saltamos la fila
-        if not col_resultado_real:
+        # Si no hay resultado real definitivo puesto en la columna E, o si la fila es otra cabecera repetida, saltamos la fila
+        if not col_resultado_real or col_resultado_real in palabras_excluidas:
             continue
 
         regla_puntos = celda_a_regla_partido(regla_raw)
         real_norm = normalizar_texto(col_resultado_real)
 
         # 🎯 DETECTAR TIPO DE FILA
-        # Si la regla contiene "5/2" o la celda real tiene un guion de marcador (ej: "2-0")
         if "5/2" in regla_raw or "5/2" in regla_puntos or ("-" in col_resultado_real and not any(c.isalpha() for c in col_resultado_real)):
             tipo = "PARTIDO"
         elif "/" in regla_raw and ("S" in regla_raw.upper() or "N" in regla_raw.upper()):
@@ -114,9 +128,8 @@ try:
                 continue
 
             for nombre, cols in participantes.items():
-                # Cada participante tiene su apuesta completa (ej: "3-1") en SU PROPIA COLUMNA
                 val_apuesta = fila[cols["col_apuesta"]].strip()
-                if not val_apuesta:
+                if not val_apuesta or val_apuesta in palabras_excluidas:
                     continue
 
                 marcador_apuesta = celda_a_marcador(val_apuesta)
@@ -128,9 +141,9 @@ try:
                     signo_apuesta = calcular_resultado_1X2(ap_l, ap_v)
 
                     if ap_l == re_l and ap_v == re_v:
-                        participantes[nombre]["puntos_totales"] += 5  # Pleno al marcador exacto
+                        participantes[nombre]["puntos_totales"] += 5  # Pleno
                     elif signo_apuesta == signo_real:
-                        participantes[nombre]["puntos_totales"] += 2  # Acierto de 1X2
+                        participantes[nombre]["puntos_totales"] += 2  # Acierto 1X2
                 except ValueError:
                     pass
 
@@ -138,7 +151,6 @@ try:
         elif tipo == "SI_NO":
             letra_real = "S" if real_norm in ("SI", "S") else "N"
             puntos_por_acierto = 0
-            # Parseamos reglas del tipo S10 / N3
             for p in regla_raw.upper().replace(" ", "").split("/"):
                 if p.startswith(letra_real):
                     nums = ''.join(filter(str.isdigit, p))
@@ -168,7 +180,7 @@ try:
     df_ranking = pd.DataFrame(ranking).sort_values(by="Puntos", ascending=False).reset_index(drop=True)
     df_ranking.index += 1
 
-    print("\n🏆 CLASIFICACIÓN CORREGIDA 🏆")
+    print("\n🏆 CLASIFICACIÓN CORREGIDA CON DINAMISMO 🏆")
     print(df_ranking)
 
     # Guardar cambios
