@@ -1,39 +1,39 @@
 [
     {
         "Nombre":"Remi",
-        "Puntos":107
+        "Puntos":97
+    },
+    {
+        "Nombre":"Ioritz",
+        "Puntos":94
     },
     {
         "Nombre":"Txino",
         "Puntos":91
     },
     {
-        "Nombre":"Rufo",
-        "Puntos":88
-    },
-    {
-        "Nombre":"Ioritz",
-        "Puntos":88
-    },
-    {
         "Nombre":"Villa",
-        "Puntos":86
+        "Puntos":89
     },
     {
         "Nombre":"Valle",
         "Puntos":83
     },
     {
-        "Nombre":"Mikelgo",
-        "Puntos":81
-    },
-    {
         "Nombre":"Manri",
         "Puntos":81
     },
     {
+        "Nombre":"Mikelgo",
+        "Puntos":81
+    },
+    {
+        "Nombre":"Rufo",
+        "Puntos":78
+    },
+    {
         "Nombre":"Beñat",
-        "Puntos":71
+        "Puntos":74
     },
     {
         "Nombre":"Asier",
