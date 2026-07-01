@@ -5,7 +5,7 @@
     },
     {
         "Nombre":"Txino",
-        "Puntos":75
+        "Puntos":78
     },
     {
         "Nombre":"Ioritz",
@@ -16,20 +16,20 @@
         "Puntos":73
     },
     {
-        "Nombre":"Mikelgo",
-        "Puntos":68
+        "Nombre":"Valle",
+        "Puntos":70
     },
     {
         "Nombre":"Beñat",
         "Puntos":68
     },
     {
-        "Nombre":"Valle",
-        "Puntos":67
+        "Nombre":"Mikelgo",
+        "Puntos":68
     },
     {
         "Nombre":"Manri",
-        "Puntos":65
+        "Puntos":68
     },
     {
         "Nombre":"Rufo",
@@ -41,6 +41,6 @@
     },
     {
         "Nombre":"Koski",
-        "Puntos":48
+        "Puntos":54
     }
 ]
