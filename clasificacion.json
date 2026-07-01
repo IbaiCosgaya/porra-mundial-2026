@@ -1,11 +1,15 @@
 [
     {
         "Nombre":"Remi",
-        "Puntos":97
+        "Puntos":107
     },
     {
         "Nombre":"Txino",
         "Puntos":91
+    },
+    {
+        "Nombre":"Rufo",
+        "Puntos":88
     },
     {
         "Nombre":"Ioritz",
@@ -20,16 +24,12 @@
         "Puntos":83
     },
     {
-        "Nombre":"Manri",
-        "Puntos":81
-    },
-    {
         "Nombre":"Mikelgo",
         "Puntos":81
     },
     {
-        "Nombre":"Rufo",
-        "Puntos":78
+        "Nombre":"Manri",
+        "Puntos":81
     },
     {
         "Nombre":"Beñat",
