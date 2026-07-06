@@ -1,19 +1,19 @@
 [
     {
+        "Nombre":"Valle",
+        "Puntos":153
+    },
+    {
         "Nombre":"Remi",
         "Puntos":153
     },
     {
-        "Nombre":"Valle",
-        "Puntos":146
+        "Nombre":"Villa",
+        "Puntos":147
     },
     {
         "Nombre":"Ioritz",
         "Puntos":142
-    },
-    {
-        "Nombre":"Villa",
-        "Puntos":140
     },
     {
         "Nombre":"Manri",
@@ -25,7 +25,7 @@
     },
     {
         "Nombre":"Mikelgo",
-        "Puntos":125
+        "Puntos":128
     },
     {
         "Nombre":"Beñat",
@@ -37,10 +37,10 @@
     },
     {
         "Nombre":"Koski",
-        "Puntos":107
+        "Puntos":110
     },
     {
         "Nombre":"Asier",
-        "Puntos":98
+        "Puntos":101
     }
 ]
