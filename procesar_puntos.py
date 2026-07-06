@@ -83,21 +83,20 @@ try:
         regla_raw = fila[3].strip().upper()
         col_resultado_real = fila[4].strip().upper()
 
-        # Si no hay resultado real introducido, nos saltamos la fila (partido o pregunta no jugada)
         if not col_resultado_real or col_resultado_real in palabras_excluidas:
             continue
 
         real_norm = normalizar_texto(col_resultado_real)
         pregunta_norm = pregunta_partido.upper()
 
-        # 🎯 DETECTAR TIPO DE FILA INTELIGENTE
-        # Es partido si se mencionan rivales directos o el resultado es un marcador de goles (ej: 2-1)
+        # 🎯 DETECTAR TIPO DE FILA CORREGIDO
         es_partido_rivales = (" VS " in pregunta_norm) or (" - " in pregunta_norm)
         es_marcador_goles = "-" in col_resultado_real and not any(c.isalpha() for c in col_resultado_real)
         
-        # Excepciones para que las preguntas de eliminatorias (ej: "Finalistas") no se confundan con partidos
-        if any(palabra in pregunta_norm for palabra in ("CAMPEON", "ELIMINADO", "MAXIMO", "GOLEADOR", "OUT", "FINALISTAS", "NUMERO DE GOLES")):
+        # Filtro estricto: Si es un duelo de goles entre jugadores individuales, NO es un partido de equipos
+        if any(palabra in pregunta_norm for palabra in ("CAMPEON", "ELIMINADO", "MAXIMO", "GOLEADOR", "OUT", "FINALISTAS", "NUMERO DE GOLES", "MAS GOLES", "HAVERTZ", "BELLINGHAM", "TORRES", "ALVAREZ", "OLISE", "FERNANDES")):
             es_partido_rivales = False
+            es_marcador_goles = False
 
         if (es_partido_rivales or es_marcador_goles) and col_resultado_real not in ("1", "X", "2"):
             tipo = "PARTIDO"
@@ -156,33 +155,26 @@ try:
                 if letra_apuesta == letra_real:
                     participantes[nombre]["puntos_totales"] += puntos_por_acierto
 
-        # --- 📝 PROCESAR PREGUNTAS ABIERTAS (MÉTODO ULTRA-BLINDADO) ---
+        # --- 📝 PROCESAR PREGUNTAS ABIERTAS ---
         elif tipo == "PREGUNTA_ABIERTA":
-            # Extraer puntos de forma segura
-            puntos_regla = 10  # Por defecto si todo falla
+            puntos_regla = 5  # Por defecto para estas preguntas si falla el parseo numérico
             try:
                 if '/' in regla_raw:
-                    # Caso: "Ambos 15/ Uno 6" o "6/3 X" -> busca el máximo número
                     numeros = [int(''.join(filter(str.isdigit, s))) for s in regla_raw.split('/') if any(c.isdigit() for c in s)]
                     if numeros: puntos_regla = max(numeros)
                 else:
-                    # Caso: "10" o "5" -> limpia el número directo de la celda
                     nums_directos = ''.join(filter(str.isdigit, regla_raw))
                     if nums_directos: puntos_regla = int(nums_directos)
             except:
-                puntos_regla = 10
+                puntos_regla = 5
 
             for nombre, cols in participantes.items():
                 apuesta_user = normalizar_texto(fila[cols["col_apuesta"]])
                 
-                # Caso especial para respuestas combinadas con barra (Ej: "Francia - Argentina" o "Francia/Inglaterra")
-                # Si el resultado real contiene una barra, comprobamos si el participante la contiene.
                 if "/" in real_norm or "-" in real_norm:
-                    # Si coincide exactamente o si el texto normalizado es idéntico limpiando guiones/barras
                     if apuesta_user == real_norm or apuesta_user.replace("-","").replace("/","") == real_norm.replace("-","").replace("/",""):
                         participantes[nombre]["puntos_totales"] += puntos_regla
                 else:
-                    # Comparación estándar limpia de textos para respuestas simples (Ej: "Empate" o "Usa")
                     if apuesta_user == real_norm:
                         participantes[nombre]["puntos_totales"] += puntos_regla
 
@@ -191,7 +183,7 @@ try:
     df_ranking = pd.DataFrame(ranking).sort_values(by="Puntos", ascending=False).reset_index(drop=True)
     df_ranking.index += 1
 
-    print("\n🏆 CLASIFICACIÓN REAL CALCULADA (PREGUNTAS ABIERTAS D1-D8 OK) 🏆")
+    print("\n🏆 CLASIFICACIÓN REAL CALCULADA (MÁS GOLES JUGADORES OK) 🏆")
     print(df_ranking)
 
     datos_json = df_ranking.to_json(orient="records", force_ascii=False, indent=4)
