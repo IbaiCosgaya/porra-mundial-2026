@@ -26,9 +26,13 @@ def calcular_resultado_1X2(goles_l, goles_v):
 def normalizar_texto(texto):
     if not texto: return ""
     t = str(texto).strip().upper()
+    # Eliminar acentos
     for k, v in {"Á":"A","É":"E","Í":"I","Ó":"O","Ú":"U"}.items():
         t = t.replace(k, v)
-    return t
+    # Reemplazar guiones o barras por espacios para normalizar nombres compuestos
+    t = t.replace("-", " ").replace("/", " ")
+    # Reducir múltiples espacios a uno solo
+    return " ".join(t.split())
 
 def celda_a_marcador(valor):
     if not valor: return None
@@ -81,29 +85,35 @@ try:
 
         pregunta_partido = fila[2].strip()
         regla_raw = fila[3].strip().upper()
-        col_resultado_real = fila[4].strip().upper()
+        col_resultado_real = fila[4].strip()
 
-        if not col_resultado_real or col_resultado_real in palabras_excluidas:
+        if not col_resultado_real or col_resultado_real.upper() in palabras_excluidas:
             continue
 
-        real_norm = normalizar_texto(col_resultado_real)
         pregunta_norm = pregunta_partido.upper()
+        real_norm = normalizar_texto(col_resultado_real)
 
         # 🎯 DETECTAR TIPO DE FILA CORREGIDO
-        es_partido_rivales = (" VS " in pregunta_norm) or (" - " in pregunta_norm)
-        es_marcador_goles = "-" in col_resultado_real and not any(c.isalpha() for c in col_resultado_real)
-        
-        # Filtro estricto: Si es un duelo de goles entre jugadores individuales, NO es un partido de equipos
-        if any(palabra in pregunta_norm for palabra in ("CAMPEON", "ELIMINADO", "MAXIMO", "GOLEADOR", "OUT", "FINALISTAS", "NUMERO DE GOLES", "MAS GOLES", "HAVERTZ", "BELLINGHAM", "TORRES", "ALVAREZ", "OLISE", "FERNANDES")):
-            es_partido_rivales = False
-            es_marcador_goles = False
-
-        if (es_partido_rivales or es_marcador_goles) and col_resultado_real not in ("1", "X", "2"):
-            tipo = "PARTIDO"
-        elif "/" in regla_raw and ("S" in regla_raw or "N" in regla_raw):
+        # Si contiene "FINALISTAS" aplicamos regla especial
+        if "FINALISTAS" in pregunta_norm:
+            tipo = "FINALISTAS"
+        # Si es una pregunta de comparación de jugadores o selecciones (pero no un partido de fútbol con goles)
+        elif any(p in pregunta_norm for p in ("MAS GOLES:", "OUT MÁS TARDE", "VS")) and not ("-" in col_resultado_real and not any(c.isalpha() for c in col_resultado_real)):
+            tipo = "DUELO_COMPARACION"
+        elif "/" in regla_raw and ("S" in regla_raw or "N" in regla_raw) and col_resultado_real.upper() in ("SI", "NO", "S", "N"):
             tipo = "SI_NO"
+        elif (" - " in pregunta_norm or " VS " in pregunta_norm) or ("-" in col_resultado_real and not any(c.isalpha() for c in col_resultado_real)):
+            tipo = "PARTIDO"
         else:
             tipo = "PREGUNTA_ABIERTA"
+
+        # Extraer puntos base de la regla
+        puntos_regla = 5
+        try:
+            nums_directos = ''.join(filter(str.isdigit, regla_raw))
+            if nums_directos: puntos_regla = int(nums_directos)
+        except:
+            pass
 
         # --- ⚽ PROCESAR PARTIDOS REALES ---
         if tipo == "PARTIDO":
@@ -143,11 +153,11 @@ try:
         # --- 🔲 PROCESAR SÍ / NO ---
         elif tipo == "SI_NO":
             letra_real = "S" if real_norm in ("SI", "S") else "N"
-            puntos_por_acierto = 0
+            puntos_por_acierto = puntos_regla
             for p in regla_raw.replace(" ", "").split("/"):
                 if p.startswith(letra_real):
                     nums = ''.join(filter(str.isdigit, p))
-                    puntos_por_acierto = int(nums) if nums else 0
+                    puntos_por_acierto = int(nums) if nums else puntos_regla
 
             for nombre, cols in participantes.items():
                 apuesta_user = normalizar_texto(fila[cols["col_apuesta"]])
@@ -155,35 +165,47 @@ try:
                 if letra_apuesta == letra_real:
                     participantes[nombre]["puntos_totales"] += puntos_por_acierto
 
-        # --- 📝 PROCESAR PREGUNTAS ABIERTAS ---
-        elif tipo == "PREGUNTA_ABIERTA":
-            puntos_regla = 5  # Por defecto para estas preguntas si falla el parseo numérico
-            try:
-                if '/' in regla_raw:
-                    numeros = [int(''.join(filter(str.isdigit, s))) for s in regla_raw.split('/') if any(c.isdigit() for c in s)]
-                    if numeros: puntos_regla = max(numeros)
-                else:
-                    nums_directos = ''.join(filter(str.isdigit, regla_raw))
-                    if nums_directos: puntos_regla = int(nums_directos)
-            except:
-                puntos_regla = 5
-
+        # --- ⚔️ PROCESAR DUELOS DE COMPARACIÓN (Ej: Ronaldo vs Messi) ---
+        elif tipo == "DUELO_COMPARACION":
             for nombre, cols in participantes.items():
                 apuesta_user = normalizar_texto(fila[cols["col_apuesta"]])
+                # Comprobación de coincidencia de texto flexible (ej: "JULIAN" entra en "JULIAN ALVAREZ")
+                if apuesta_user and (apuesta_user in real_norm or real_norm in apuesta_user):
+                    participantes[nombre]["puntos_totales"] += puntos_regla
+
+        # --- 🏅 REGLA ESPECIAL FINALISTAS ---
+        elif tipo == "FINALISTAS":
+            # Limpiamos y separamos los dos equipos reales (ej: "Francia/Inglaterra" -> ["FRANCIA", "INGLATERRA"])
+            equipos_reales = [normalizar_texto(eq) for eq in col_resultado_real.replace("-", "/").split("/") if eq.strip()]
+            
+            for nombre, cols in participantes.items():
+                apuesta_raw = fila[cols["col_apuesta"]]
+                equipos_apuesta = [normalizar_texto(eq) for eq in apuesta_raw.replace("-", "/").split("/") if eq.strip()]
                 
-                if "/" in real_norm or "-" in real_norm:
-                    if apuesta_user == real_norm or apuesta_user.replace("-","").replace("/","") == real_norm.replace("-","").replace("/",""):
-                        participantes[nombre]["puntos_totales"] += puntos_regla
-                else:
-                    if apuesta_user == real_norm:
-                        participantes[nombre]["puntos_totales"] += puntos_regla
+                # Contamos cuántos de los apostados están en la lista real
+                aciertos = 0
+                for eq_ap in equipos_apuesta:
+                    if any(eq_ap in eq_re or eq_re in eq_ap for eq_re in equipos_reales):
+                        aciertos += 1
+                
+                if aciertos == 2:
+                    participantes[nombre]["puntos_totales"] += 15
+                elif aciertos == 1:
+                    participantes[nombre]["puntos_totales"] += 6
+
+        # --- 📝 PROCESAR RESTO DE PREGUNTAS ABIERTAS ---
+        elif tipo == "PREGUNTA_ABIERTA":
+            for nombre, cols in participantes.items():
+                apuesta_user = normalizar_texto(fila[cols["col_apuesta"]])
+                if apuesta_user == real_norm:
+                    participantes[nombre]["puntos_totales"] += puntos_regla
 
     # Ranking Final Ordenado
     ranking = [{"Nombre": k, "Puntos": v["puntos_totales"]} for k, v in participantes.items()]
     df_ranking = pd.DataFrame(ranking).sort_values(by="Puntos", ascending=False).reset_index(drop=True)
     df_ranking.index += 1
 
-    print("\n🏆 CLASIFICACIÓN REAL CALCULADA (MÁS GOLES JUGADORES OK) 🏆")
+    print("\n🏆 CLASIFICACIÓN REAL CALCULADA CORREGIDA 🏆")
     print(df_ranking)
 
     datos_json = df_ranking.to_json(orient="records", force_ascii=False, indent=4)
