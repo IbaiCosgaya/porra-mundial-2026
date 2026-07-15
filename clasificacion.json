@@ -1,31 +1,35 @@
 [
     {
         "Nombre": "Remi",
-        "Puntos": 212.0
+        "Puntos": 218.0
+    },
+    {
+        "Nombre": "Valle",
+        "Puntos": 204.0
     },
     {
         "Nombre": "Ioritz",
         "Puntos": 195.0
     },
     {
+        "Nombre": "Villa",
+        "Puntos": 183.0
+    },
+    {
         "Nombre": "Manri",
         "Puntos": 181.0
     },
     {
-        "Nombre": "Valle",
-        "Puntos": 179.0
-    },
-    {
-        "Nombre": "Villa",
-        "Puntos": 177.0
+        "Nombre": "Mikelgo",
+        "Puntos": 178.0
     },
     {
         "Nombre": "Txino",
         "Puntos": 175.0
     },
     {
-        "Nombre": "Mikelgo",
-        "Puntos": 162.0
+        "Nombre": "Koski",
+        "Puntos": 158.0
     },
     {
         "Nombre": "Asier",
@@ -36,11 +40,7 @@
         "Puntos": 155.0
     },
     {
-        "Nombre": "Koski",
-        "Puntos": 152.0
-    },
-    {
         "Nombre": "Beñat",
-        "Puntos": 137.0
+        "Puntos": 143.0
     }
 ]
